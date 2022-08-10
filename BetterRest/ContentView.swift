@@ -71,7 +71,7 @@ struct ContentView: View {
                 .headerProminence(.increased)
             }
             .navigationTitle("BetterRest")
-           
+            .onAppear(perform: calculateBedtime)
         }
     }
     
