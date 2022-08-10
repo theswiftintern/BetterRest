@@ -12,10 +12,7 @@ struct ContentView: View {
     @State private var wakeUp = defaultWakeTime
     @State private var sleepAmount = 8.0
     @State private var coffeeAmount = 1
-    
-    @State private var alertTitle = ""
-    @State private var alertMessage = ""
-    @State private var showingAlert = false
+    @State private var bedTimeResult = "12:00AM"
     
     static var defaultWakeTime: Date {
         var components = DateComponents()
@@ -27,37 +24,54 @@ struct ContentView: View {
     var body: some View {
         NavigationView {
             Form {
-                VStack(alignment: .leading, spacing: 0) {
+                Section() {
+                    HStack {
+                        Text("Estimated time")
+                        Spacer()
+                        DatePicker("Please enter a time", selection: $wakeUp, displayedComponents: .hourAndMinute)
+                            .labelsHidden()
+                            .onChange(of: wakeUp) { _ in
+                                calculateBedtime()
+                            }
+                    }
+                } header: {
                     Text("When do you want to wake up?")
-                        .font(.headline)
-                    
-                    DatePicker("Please enter a time", selection: $wakeUp, displayedComponents: .hourAndMinute)
-                        .labelsHidden()
+                        .font(.subheadline.bold())
                 }
                 
-                VStack(alignment: .leading, spacing: 0) {
-                    Text("Desired amount of sleep")
-                        .font(.headline)
-                    
+                Section() {
                     Stepper("\(sleepAmount.formatted()) hours", value: $sleepAmount, in: 4...12, step: 0.25)
+                        .onChange(of: sleepAmount) { _ in
+                            calculateBedtime()
+                        }
+                } header: {
+                    Text("Desired amount of sleep")
+                        .font(.subheadline.bold())
                 }
                 
-                VStack(alignment: .leading, spacing: 0) {
+                Section() {
+                    Picker(coffeeAmount == 1 ? "1 cup" : "\(coffeeAmount) cups", selection: $coffeeAmount) {
+                        ForEach(1...20, id: \.self) { numberOfCups in
+                            Text(numberOfCups == 1 ? "\(numberOfCups) cup" : "\(numberOfCups) cups")
+                        }
+                    }
+                    .onChange(of: coffeeAmount) { _ in
+                        calculateBedtime()
+                    }
+                } header: {
                     Text("Daily coffee intake")
-                        .font(.headline)
-                    
-                    Stepper(coffeeAmount == 1 ? "1 cup" : "\(coffeeAmount) cups", value: $coffeeAmount, in: 1...20)
+                        .font(.subheadline.bold())
                 }
+                
+                Section() {
+                    Text(bedTimeResult)
+                } header: {
+                    Text("Recommended Bedtime")
+                }
+                .headerProminence(.increased)
             }
             .navigationTitle("BetterRest")
-            .toolbar {
-                Button("Calculate", action: calculateBedtime)
-            }
-            .alert(alertTitle, isPresented: $showingAlert) {
-                Button("OK") {}
-            } message: {
-                Text(alertMessage)
-            }
+           
         }
     }
     
@@ -74,15 +88,11 @@ struct ContentView: View {
             
             let sleepTime = wakeUp - prediction.actualSleep
             
-            alertTitle = "Your ideal bedtime is..."
-            alertMessage = sleepTime.formatted(date: .omitted, time: .shortened)
+            bedTimeResult = sleepTime.formatted(date: .omitted, time: .shortened);
             
         } catch {
-            alertTitle = "Error"
-            alertMessage = "Sorry, there was a problem calculating your bedtime."
+            bedTimeResult = "Sorry, there was a problem calculating your bedtime."
         }
-        
-        showingAlert = true
     }
 }
 
